@@ -90,3 +90,32 @@ export function useCreateSchema({
     },
   });
 }
+
+export function useUpdateSchema({
+  onSuccessCallback,
+}: UpdateSchemaParams = {}) {
+  const queryClient = useQueryClient();
+
+  return useMutation<SchemaInterface, unknown, UpdateSchemaMutationParams>({
+    mutationFn: async (params: UpdateSchemaMutationParams) => {
+      const response = await fetch(`${UC_API_PREFIX}/schemas/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+      if (!response.ok) {
+        // TODO: Expose error message
+        throw new Error('Failed to update schema');
+      }
+      return response.json();
+    },
+    onSuccess: (schema) => {
+      queryClient.invalidateQueries({
+        queryKey: ['listSchemas', schema.catalog_name],
+      });
+      onSuccessCallback?.(schema);
+    },
+  });
+}
